@@ -1,6 +1,7 @@
 import random
 from psycopg2 import connect
 
+
 class User:
     con = connect(user='postgres', host='localhost', password='coderslab',
                   database='workshops_module2')
@@ -19,8 +20,9 @@ class User:
     @property
     def hashed_password(self):
         return self._hashed_password
-    #we need this function because in the end we want to store
-    #only the hashed value of the password
+
+    # we need this function because in the end we want to store
+    # only the hashed value of the password
     def set_password(self, password, salt=''):
         self._hashed_password = hash_password(password, salt)
 
@@ -36,6 +38,31 @@ class User:
             return True
         return False
 
+    @staticmethod
+    def load_user_by_username(cursor, name):
+        cursor.execute('SELECT id, username, hashed_password FROM users where username=%s',
+                       (name,))
+        data = cursor.fetchone()
+        if data:
+            id, username, hashed_password = data
+            loaded_user = User(username)
+            loaded_user._id = id
+            loaded_user._password = hashed_password
+            return loaded_user
+        return None
+
+    @staticmethod
+    def load_user_by_username(cursor, id):
+        cursor.execute('SELECT id, username, hashed_password FROM users where username=%s',
+                       (id,))
+        data = cursor.fetchone()
+        if data:
+            id, username, hashed_password = data
+            loaded_user = User(username)
+            loaded_user._id = id
+            loaded_user._password = hashed_password
+            return loaded_user
+        return None
 
 
 # def hash_password(password, salt=None):
