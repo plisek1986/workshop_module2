@@ -4,6 +4,7 @@ from psycopg2.errors import UniqueViolation
 from utils import check_password
 from psycopg2 import connect, OperationalError
 
+#preparing logic for parsing information provided by the user in the console
 parser = argparse.ArgumentParser()
 parser.add_argument('-u', '--username', help='username')
 parser.add_argument('-p', '--password', help='password (min 8 characters)')
@@ -14,12 +15,13 @@ parser.add_argument("-e", "--edit", help="edit user", action="store_true")
 
 args = parser.parse_args()
 
+# function for listing users
 def list_users(cursor):
     users = User.load_all_users(cursor)
     for user in users:
         print(user.username)
 
-
+#function for creating a new user
 def new_user(cursor, username, password):
     user = User.load_user_by_username(cursor, username)
     try:
@@ -33,6 +35,7 @@ def new_user(cursor, username, password):
     except UniqueViolation as e:
         print('User already exists, please try another username!', e)
 
+#function for amending user's password
 def password_edit(cursor, username, password, new_pass):
     user = User.load_user_by_username(cursor, username)
     if not user:
@@ -47,6 +50,7 @@ def password_edit(cursor, username, password, new_pass):
     else:
         print('Provided password is incorrect!')
 
+#function for deleting a user
 def delete_user(cursor, username, password):
     user = User.load_user_by_username(cursor, username)
     if not user:
@@ -57,6 +61,8 @@ def delete_user(cursor, username, password):
     else:
         print('Provided password is incorrect!')
 
+#main function for establishing connection with the database and parsing information
+#provided by the user in the console
 if __name__ == '__main__':
     try:
         con = connect(user='postgres', host='localhost', password='coderslab', database='workshops_module2')
