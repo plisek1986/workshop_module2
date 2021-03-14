@@ -1,4 +1,4 @@
-from clcrypto import hash_password
+from utils import hash_password
 from psycopg2 import connect
 
 
@@ -47,7 +47,6 @@ class User:
         else:
             cursor.execute('UPDATE users SET username=%s, hashed_password=%s WHERE id=%s',
                            (self.username, self.hashed_password, self.id))
-            cursor.fetchone()
             return True
 
     # define a static method for loading a user from the
@@ -101,7 +100,6 @@ class User:
 
 
 class Messages:
-
     con = connect(user='postgres', host='localhost', password='coderslab',
                   database='workshops_module2')
     con.autocommit = True
@@ -126,17 +124,16 @@ class Messages:
         if self._id == -1:
             cursor.execute('''INSERT INTO messages (from_id, to_id, text) VALUES (%s, %s, %s)
                            RETURNING id''', (self.from_id, self.to_id, self.text))
-            self._id = cursor.fetchone()[0]
+            self._id, self._creation_data = cursor.fetchone()
+            return True
         else:
             cursor.execute('UPDATE messages SET from_id=%s, to_id=%s, text=%s WHERE id=%s',
                            (self.from_id, self.to_id, self.text, self.id))
-            cursor.fetchone()
             return True
-        return False
 
     @staticmethod
-    #we add the optional parameter user_id so that if it is provided, we can filter for messages for this
-    #concrete user_id
+    # we add the optional parameter user_id so that if it is provided, we can filter for messages for this
+    # concrete user_id
     def load_all_messages(cursor, user_id=None):
         messages = []
         if user_id:
@@ -151,47 +148,3 @@ class Messages:
             loaded_message._creation_data = creation_data
             messages.append(loaded_message)
         return messages
-
-
-
-
-
-
-# def hash_password(password, salt=None):
-# """
-#     Hashes the password with salt as an optional parameter.
-#
-#     If salt is not provided, generates random salt.
-#     If salt is less than 16 chars, fills the string to 16 chars.
-#     If salt is longer than 16 chars, cuts salt to 16 chars.
-#
-#     :param str password: password to hash
-#     :param str salt: salt to hash, default None
-#
-#     :rtype: str
-#     :return: hashed password
-#     """
-#     if salt is None:
-#         salt = generate_salt()
-#     if len(salt) < 16:
-#         salt += ("a" * (16 - len(salt)))
-#     if len(salt) > 16:
-#         salt = salt[:16]
-#     t_sha = hashlib.sha256()
-#     t_sha.update(salt.encode('utf-8') + password.encode('utf-8'))
-#
-#     return salt + t_sha.hexdigest()
-#
-# def generate_salt():
-#     """
-#     Generates a 16-character random salt.
-#
-#     :rtype: str
-#     :return: str with generated salt
-#     """
-#     salt = ""
-#     for i in range(0, 16):
-#
-#         # get a random element from the iterable
-#         salt += random.choice(ALPHABET)
-#     return salt
