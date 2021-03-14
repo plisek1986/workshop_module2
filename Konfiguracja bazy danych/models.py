@@ -148,3 +148,14 @@ class Messages:
             loaded_message._creation_data = creation_data
             messages.append(loaded_message)
         return messages
+
+con = connect(user='postgres', host='localhost', password='coderslab', database='workshops_module2')
+con.autocommit = True
+cursor = con.cursor()
+
+
+new_record = User('plisek', 'plisek1986')
+new_record.save_to_db(cursor=cursor)
+# print(User.load_user_by_id(cursor, istniejące_id))
+# print(User.load_user_by_id(cursor, nieisteniejące_id))
+# print(User.load_all_users(cursor))
