@@ -20,7 +20,7 @@ class User:
 
     # define dynamic properties for sensitive data
     @property
-    def get_id(self):
+    def id(self):
         return self._id
 
     # define dynamic properties for sensitive data
@@ -45,11 +45,10 @@ class User:
                            RETURNING id''', (self.username, self.hashed_password))
             self._id = cursor.fetchone()[0]
         else:
-            cursor.execute(
-                '''UPDATE users SET username=self.username hashed_password=self.hashed_password WHERE id=self._id ''')
+            cursor.execute('UPDATE users SET username=%s, hashed_password=%s WHERE id=%s',
+                           (self.username, self.hashed_password, self.id))
             cursor.fetchone()
             return True
-        return False
 
     # define a static method for loading a user from the
     # database using his/her username as an atribute
@@ -96,7 +95,7 @@ class User:
 
     # define a method for deleting users from the database = THIS IS NOT A STATIC METHOD!!
     def delete(self, cursor):
-        cursor.execute('DELETE * FROM users WHERE id=%s', (self._id,))
+        cursor.execute('DELETE * FROM users WHERE id=%s', (self.id,))
         self._id = -1
         return True
 
@@ -108,29 +107,55 @@ class Messages:
     con.autocommit = True
     cursor = con.cursor()
 
-    def __init__(self, from_id, to_id, text, creation_data):
+    def __init__(self, from_id, to_id, text):
         self._id = -1
         self.from_id = from_id
         self.to_id = to_id
         self.text = text
-        self.creation_data = creation_data
+        self._creation_data = None
+
+    @property
+    def creation_data(self):
+        return self._creation_data
 
     @property
     def id(self):
         return self._id
 
-    def save_to_db(self):
+    def save_to_db(self, cursor):
         if self._id == -1:
-            cursor.execute('''INSERT INTO messages (from_id, to_id, text, creation_data) VALUES (%s, %s, %s, %s)
-                           RETURNING id''', (self.from_id, self.to_id, self.text, self.creation_data))
+            cursor.execute('''INSERT INTO messages (from_id, to_id, text) VALUES (%s, %s, %s)
+                           RETURNING id''', (self.from_id, self.to_id, self.text))
             self._id = cursor.fetchone()[0]
         else:
-            cursor.execute(
-                '''UPDATE messages SET from_id=self.from_id to_id=self.to_id text=self.text
-                creation_data=self.creation_data WHERE id=self._id ''')
+            cursor.execute('UPDATE messages SET from_id=%s, to_id=%s, text=%s WHERE id=%s',
+                           (self.from_id, self.to_id, self.text, self.id))
             cursor.fetchone()
             return True
         return False
+
+    @staticmethod
+    #we add the optional parameter user_id so that if it is provided, we can filter for messages for this
+    #concrete user_id
+    def load_all_messages(cursor, user_id=None):
+        messages = []
+        if user_id:
+            cursor.execute('''SELECT id, from_id, to_id, text, creation_data FROM messages
+                           WHERE id=%s''', (user_id,))
+        else:
+            cursor.execute('SELECT id, from_id, to_id, text, creation_data FROM messages')
+        for row in cursor.fetchall():
+            id_, from_id, to_id, text, creation_data = row
+            loaded_message = Messages(from_id, to_id, text)
+            loaded_message._id = id_
+            loaded_message._creation_data = creation_data
+            messages.append(loaded_message)
+        return messages
+
+
+
+
+
 
 # def hash_password(password, salt=None):
 # """
